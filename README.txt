@@ -1,5 +1,5 @@
 ╔══════════════════════════════════════════════════════════════╗
-║           GALERIE BIOPICS - PROJET FINAL CORRIGÉ            ║
+║           GALERIE BIOPICS - PROJET FINAL CORRIGÉ             ║
 ╚══════════════════════════════════════════════════════════════╝
 
 ✅ CORRECTIONS APPLIQUÉES :
