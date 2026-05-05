@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Galerie Biopics</title>
+    
+    <!-- ORDRE IMPORTANT DES SCRIPTS -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/gh/mrdoob/three.js@r128/examples/js/controls/OrbitControls.js"></script>
+    <script src="https://cdn.jsdelivr.net/gh/mrdoob/three.js@r128/examples/js/loaders/GLTFLoader.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <link rel="stylesheet" href="css/styles.css" />
+</head>
+<body>
+    <div id="canvas-container"></div>
+    <div id="top-hud" class="hidden fixed top-0 left-0 w-full z-30 p-8 flex justify-between items-start pointer-events-none">
+      <div class="glass-panel px-6 py-3 rounded-xl flex items-center gap-5 pointer-events-auto border-l-4 border-l-[#d4af37]">
+        <div class="flex flex-col">
+          <span class="text-[8px] font-black text-amber-600/60 tracking-[0.3em] uppercase mb-1">Archive Integrity</span>
+          <div class="w-24 sm:w-56 xp-bar-container"><div id="xp-progress"></div></div>
+        </div>
+        <span id="xp-text" class="text-xs font-bold mono-info text-amber-500">0 / 360</span>
+      </div>
+      <div id="hud-center-title" class="hidden text-center pointer-events-none">
+        <h2 class="text-xl font-bold uppercase tracking-[0.5em] serif-title italic gradient-text">Mémoires de l'Écran</h2>
+      </div>
+      <div class="flex items-center gap-4 pointer-events-auto">
+        <div id="timer-display" class="hidden glass-panel px-6 py-3 rounded-xl text-sm font-bold tracking-[0.2em] min-w-[90px] text-center text-amber-100 mono-info">20:00</div>
+        <button id="btn-leaderboard-hud" onclick="changeScreen('leaderboard')" class="glass-panel px-6 py-3 rounded-xl text-[9px] font-black uppercase tracking-[0.3em] hover:bg-amber-500 hover:text-black transition-all">Panthéon</button>
+      </div>
+    </div>
+    
+    <div id="audio-panel" class="hidden fixed top-28 right-8 z-30 glass-panel p-6 rounded-xl w-56 space-y-4 pointer-events-auto">
+      <div class="flex justify-between text-[8px] uppercase font-black text-amber-700 tracking-[0.2em]">
+        <span>Soundtrack</span><span id="vol-val" class="mono-info">50%</span>
+      </div>
+      <input type="range" class="w-full h-1 bg-gray-900 rounded-lg appearance-none cursor-pointer accent-amber-500" id="vol-slider" min="0" max="100" value="50" />
+    </div>
+    
+    <div id="ui-layer" class="fixed inset-0 z-20 pointer-events-none">
+      <div id="screen-loading" class="pointer-events-auto">
+        <div class="relative mb-12">
+          <h1 class="text-6xl font-black tracking-tighter gradient-text uppercase serif-title italic">SEARCH REF</h1>
+          <div class="absolute -bottom-4 left-0 w-full h-[1px] bg-gradient-to-r from-transparent via-amber-500 to-transparent"></div>
+        </div>
+        <div class="w-72 h-[1px] bg-white/5 rounded-full overflow-hidden relative mb-4">
+          <div id="loading-bar" class="absolute left-0 top-0 h-full bg-amber-500" style="width: 0%"></div>
+        </div>
+        <span id="loading-percent" class="text-[9px] font-bold tracking-[0.8em] text-amber-800 uppercase mono-info">INITIALISATION 0%</span>
+      </div>
+      
+      <div id="screen-home" class="hidden w-full h-full flex flex-col p-16 justify-between items-center">
+        <div class="mt-32 text-center">
+          <h1 class="text-8xl sm:text-9xl font-black tracking-tighter serif-title italic mb-4 uppercase leading-none">Biopics</h1>
+          <p class="text-[11px] tracking-[1.2em] text-white uppercase font-black ml-4 mono-info">L'ÂME DERRIÈRE L'IMAGE</p>
+        </div>
+        <div class="w-full flex justify-between items-end max-w-7xl">
+          <button onclick="startGame()" class="pointer-events-auto group relative px-12 py-5 border border-amber-500/30 overflow-hidden rounded-sm transition-all hover:border-amber-500">
+            <div class="absolute inset-0 bg-amber-500 translate-y-full group-hover:translate-y-0 transition-transform duration-300"></div>
+            <span class="relative z-10 text-amber-500 group-hover:text-black font-black uppercase tracking-[0.4em] text-[12px]">Lancer l'Exploration</span>
+          </button>
+          <button onclick="toggleDifficulty()" class="pointer-events-auto text-right group">
+            <p class="text-[8px] text-amber-800 uppercase mb-2 tracking-[0.4em] font-black mono-info">Temporal Archive</p>
+            <p id="difficulty-label" class="text-3xl font-bold text-green-500 uppercase italic group-hover:text-amber-200 serif-title">Facile - 20:00</p>
+          </button>
+        </div>
+      </div>
+      
+      <div id="screen-gallery" class="hidden w-full h-full flex flex-col items-start p-12 pt-28">
+        <button onclick="resetGame()" class="pointer-events-auto text-[9px] font-black uppercase tracking-[0.3em] text-amber-800 hover:text-amber-500 transition-all px-8 py-4 glass-panel rounded-lg">← Menu Principal</button>
+
+      </div>
+      
+      <div id="screen-game" class="hidden w-full h-full relative">
+        <!-- OBJET 3D PLEIN ÉCRAN -->
+        <div id="object-viewer" class="absolute inset-0 cursor-grab pointer-events-auto"></div>
+
+        <!-- BOUTON RETOUR EN HAUT À GAUCHE -->
+        <button onclick="changeScreen('gallery')" class="absolute top-8 left-8 pointer-events-auto text-[9px] font-black uppercase tracking-[0.3em] text-amber-800 hover:text-amber-500 transition-all px-8 py-4 glass-panel rounded-lg z-10">
+          ← Revenir en Salle
+        </button>
+        <p id="game-item-difficulty" class="absolute top-8 right-8 text-[11px] font-black uppercase tracking-[0.8em] text-amber-700/40 serif-title italic z-10"></p>
+
+        <!-- PANNEAU DE QUESTIONS EN BAS EN OVERLAY -->
+        <div class="absolute bottom-0 left-0 w-full flex items-end justify-center px-12 py-6 pointer-events-auto bg-gradient-to-t from-black/90 to-transparent z-10">
+          <div class="w-full max-w-6xl flex gap-6">
+            <div id="hints-container" class="hints-panel flex-shrink-0 w-80"></div>
+            <div class="flex-1 glass-panel p-6 rounded-3xl flex items-center gap-6 border-t-2 border-t-amber-500/20 shadow-2xl">
+              <div class="flex-1">
+                <h3 class="text-[8px] font-black uppercase tracking-[1em] text-amber-800 italic serif-title mb-2">
+                  Identification de la Référence
+                </h3>
+                <input type="text" id="guess-input" placeholder="Titre du film..."
+                  class="w-full bg-transparent py-2 text-left text-xl outline-none font-black text-white serif-title" />
+                <div id="encouragement-msg" class="mt-2 text-xs font-bold tracking-wide transition-all duration-300 opacity-0 min-h-[18px]"></div>
+              </div>
+              <div class="flex flex-col gap-3 flex-shrink-0">
+                <button onclick="changeScreen('gallery')" class="px-6 py-3 bg-white/10 border border-amber-500 text-amber-200 font-black uppercase tracking-[0.3em] rounded-sm text-[10px] hover:bg-white/20 transition-all">
+                  Retour
+                </button>
+                <button id="btn-guess" class="px-8 py-4 bg-amber-500 text-black font-black uppercase tracking-[0.3em] rounded-sm text-[10px] hover:bg-white transition-all">
+                  Vérifier
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <div id="screen-reward" class="hidden w-full h-full flex flex-col items-center justify-center gap-12">
+        <div class="text-center">
+          <h2 id="reward-xp-text" class="text-8xl font-black italic serif-title gradient-text mb-4">+ 10 XP</h2>
+          <p class="text-[12px] tracking-[1em] uppercase text-amber-800 font-black mono-info">HÉRITAGE PRÉSERVÉ</p>
+        </div>
+        <button onclick="changeScreen('gallery')" class="pointer-events-auto px-12 py-4 bg-white text-black font-black rounded-sm text-[10px] uppercase tracking-[0.3em] hover:bg-amber-400 transition-all">Suivant</button>
+      </div>
+      
+      <div id="screen-leaderboard" class="hidden w-full h-full flex flex-col items-center justify-center p-10">
+        <div class="max-w-lg w-full glass-panel rounded-[60px] p-12 space-y-10 border-amber-500/30 pointer-events-auto">
+          <div class="flex justify-between items-center border-b border-amber-500/10 pb-6">
+            <h2 class="text-4xl font-black uppercase italic serif-title gradient-text">Panthéon</h2>
+            <button onclick="closeLeaderboard()" class="text-[10px] font-black text-amber-900 hover:text-amber-500 uppercase transition-all">Fermer</button>
+          </div>
+          <div id="leaderboard-list" class="space-y-4 max-h-[400px] overflow-y-auto no-scrollbar"></div>
+          <button onclick="closeLeaderboard()" class="w-full py-5 text-[10px] font-black tracking-[0.4em] uppercase border border-amber-500/20 rounded-sm hover:bg-amber-500 hover:text-black transition-all">Retour</button>
+        </div>
+      </div>
+    </div>
+
+    <script src="js/data.js"></script>
+    <script src="js/state.js"></script>
+    <script src="js/player.js"></script>
+    <script src="js/scene.js"></script>
+    <script src="js/ui.js"></script>
+    <script src="js/game.js"></script>
+    <script src="js/main.js"></script>
+</body>
+</html>
