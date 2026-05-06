@@ -165,7 +165,7 @@ function changeScreen(id) {
     // Boucle d'animation pour l'objet
     var animationFrameId;
     function animateObject() {
-      animationFrameId = requestAnimationFrame(animateObject);
+      state.animationFrameId = requestAnimationFrame(animateObject);
       objectControls.update();
       objectRenderer.render(objectScene, objectCamera);
     }
