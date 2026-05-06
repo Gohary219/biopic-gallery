@@ -504,6 +504,7 @@ function onCanvasClick(event) {
 
 function animate() {
   requestAnimationFrame(animate);
+  if (state.inGameScreen) return;
   
   var delta = 0.016; // ~60fps
   
