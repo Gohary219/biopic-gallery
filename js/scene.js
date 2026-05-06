@@ -541,7 +541,7 @@ function animate() {
 
   // ANIMATION DE ROTATION DES OBJETS LORS DE PROXIMITÉ
   if (galleryGroup.visible && state.currentScreen === 'gallery') {
-    var proximityThreshold = 8; // Distance à partir de laquelle l'animation commence
+    var proximityThreshold = 4; // Distance à partir de laquelle l'animation commence
     var cameraPosition = camera.position;
 
     galleryGroup.children.forEach(function(group) {
