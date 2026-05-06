@@ -184,6 +184,7 @@ function changeScreen(id) {
     
     // Stocker les références pour cleanup
     state.objectRenderer = objectRenderer;
+    state.inGameScreen = true;
     state.objectScene = objectScene;
     state.objectControls = objectControls;
     state.animationFrameId = animationFrameId;
