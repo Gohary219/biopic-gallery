@@ -6,6 +6,7 @@
 // Il faut le détruire explicitement quand on quitte cet écran,
 // sinon la boucle d'animation continue de tourner en arrière-plan et fuit la mémoire GPU.
 function cleanupObjectRenderer() {
+  state.inGameScreen = false;
   if (state.objectRenderer) {
     if (state.animationFrameId) cancelAnimationFrame(state.animationFrameId);
     if (state.resizeHandler) window.removeEventListener('resize', state.resizeHandler);
